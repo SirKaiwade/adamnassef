@@ -10,7 +10,7 @@ const PROFILE = {
   blurb:
     "Interned on optimization & simulation at Amazon. Built a blockchain marketing studio to $1.3M+ mint revenue. I like hard problems, simple UX, and fast feedback loops.",
   headshot: "https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1762387200&v=beta&t=Q5OBKvs_eOiySU4EUYuaNYCC5ai8lfOdEF2RCMy56Is",
-  resumeUrl: "/Adam_Nassef_Resume_2025.pdf", // replace with your file path
+  resumeUrl: "/Adam_Nassef_Resume_2025.pdf", // PDF file in public directory
   email: "ayhnassef@gmail.com",
   github: "https://github.com/",
   linkedin: "https://linkedin.com/in/adamnassef",

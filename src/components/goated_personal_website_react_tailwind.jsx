@@ -259,6 +259,7 @@ const Hero = () => {
               </a>
               <a
                 href={PROFILE.resumeUrl}
+                download="Adam_Nassef_Resume_2025.pdf"
                 className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm theme-transition ${
                   theme === 'light' 
                     ? 'border-slate-300 text-slate-700 hover:bg-slate-50' 

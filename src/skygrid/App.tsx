@@ -507,6 +507,7 @@ function App() {
         selectedCity={selectedCity}
         userLocation={userCoordinates}
         showTrails={layers.trails}
+        selectedAircraft={selectedAircraft}
         onAircraftClick={setSelectedAircraft}
       />
 

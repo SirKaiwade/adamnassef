@@ -12,6 +12,7 @@ interface MapProps {
   selectedCity: { lat: number; lon: number; name: string } | null;
   userLocation: { lat: number; lon: number } | null;
   showTrails: boolean;
+  selectedAircraft: Aircraft | null;
   onAircraftClick: (aircraft: Aircraft) => void;
 }
 
@@ -20,7 +21,7 @@ interface AircraftWithTimestamp extends Aircraft {
   timestamp: number;
 }
 
-export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, showTrails, onAircraftClick }: MapProps) {
+export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, showTrails, selectedAircraft, onAircraftClick }: MapProps) {
   const { theme } = useTheme();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -56,7 +57,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         if (map.current) {
           try {
             // Create plane icon by converting SVG to canvas/ImageData (original working approach)
-            const createPlaneIcon = (isLight: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
+            const createPlaneIcon = (isLight: boolean, isSelected: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
               const canvas = document.createElement('canvas');
               canvas.width = 24;
               canvas.height = 24;
@@ -67,13 +68,23 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 return;
               }
 
-              // Theme-aware colors: dark gray for light mode, light gray for dark mode
-              const fillColor = isLight ? '#475569' : '#e2e8f0'; // slate-600 for light, slate-200 for dark
-              const strokeColor = isLight ? '#334155' : '#cbd5e1'; // slate-700 for light, slate-300 for dark
+              // Colors: selected planes get a satisfying orange/amber glow, regular planes are theme-aware
+              let fillColor: string;
+              let strokeColor: string;
+              
+              if (isSelected) {
+                // Selected: bright orange/amber for satisfying feedback
+                fillColor = '#f59e0b'; // amber-500 - warm, satisfying orange
+                strokeColor = '#d97706'; // amber-600 - slightly darker for contrast
+              } else {
+                // Regular: theme-aware colors
+                fillColor = isLight ? '#475569' : '#e2e8f0'; // slate-600 for light, slate-200 for dark
+                strokeColor = isLight ? '#334155' : '#cbd5e1'; // slate-700 for light, slate-300 for dark
+              }
 
               // Create an image from SVG data URI
               const svgData = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.5"/>
+<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${isSelected ? '1' : '0.5'}"/>
 </svg>`;
               
               const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
@@ -83,7 +94,6 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
               img.onload = () => {
                 ctx.drawImage(img, 0, 0);
                 const imageData = ctx.getImageData(0, 0, 24, 24);
-                console.log('[Map] Plane icon created from SVG');
                 callback(imageData);
                 URL.revokeObjectURL(url);
               };
@@ -93,7 +103,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 // Fallback: create a simple plane shape using canvas
                 ctx.fillStyle = fillColor;
                 ctx.strokeStyle = strokeColor;
-                ctx.lineWidth = 1;
+                ctx.lineWidth = isSelected ? 2 : 1;
                 ctx.beginPath();
                 ctx.moveTo(12, 2);
                 ctx.lineTo(20, 10);
@@ -126,8 +136,8 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
               },
             });
 
-            // Create and load icon
-            createPlaneIcon(theme === 'light', (imageData) => {
+            // Create and load icons (regular and selected)
+            createPlaneIcon(theme === 'light', false, (imageData) => {
               if (map.current) {
                 // Remove old icon if it exists
                 if (map.current.hasImage('plane-icon')) {
@@ -135,12 +145,32 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 }
                 try {
                   map.current.addImage('plane-icon', imageData);
-                  console.log('[Map] Plane icon added successfully, hasImage check:', map.current.hasImage('plane-icon'));
+                  console.log('[Map] Plane icon added successfully');
                 } catch (error) {
                   console.error('[Map] Error adding plane icon to map:', error);
                 }
               }
-              
+            });
+            
+            // Create selected/highlighted icon
+            createPlaneIcon(theme === 'light', true, (imageData) => {
+              if (map.current) {
+                // Remove old selected icon if it exists
+                if (map.current.hasImage('plane-icon-selected')) {
+                  map.current.removeImage('plane-icon-selected');
+                }
+                try {
+                  map.current.addImage('plane-icon-selected', imageData);
+                  console.log('[Map] Selected plane icon added successfully');
+                } catch (error) {
+                  console.error('[Map] Error adding selected plane icon to map:', error);
+                }
+              }
+            });
+            
+            // Wait for both icons to be ready before adding layer
+            // Use a small delay to ensure icons are loaded
+            setTimeout(() => {
               // Only add layer if it doesn't exist
               if (map.current && !map.current.getLayer('aircraft-planes')) {
                 console.log('[Map] Adding aircraft-planes layer');
@@ -149,7 +179,13 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                   type: 'symbol',
                   source: 'aircraft',
                   layout: {
-                    'icon-image': 'plane-icon',
+                    // Use conditional icon: selected planes get orange icon, others get regular
+                    'icon-image': [
+                      'case',
+                      ['get', 'isSelected'],
+                      'plane-icon-selected',
+                      'plane-icon'
+                    ],
                     'icon-size': [
                       'interpolate',
                       ['linear'],
@@ -169,10 +205,62 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 });
                 console.log('[Map] Aircraft layer added, source exists:', !!map.current.getSource('aircraft'));
                 
+                // Add click handlers immediately after layer is created
+                // Click handler for aircraft
+                map.current.on('click', 'aircraft-planes', (e) => {
+                  if (e.features && e.features[0]) {
+                    const icao24 = e.features[0].properties?.icao24;
+                    if (icao24 && clickHandlersRef.current.has(icao24)) {
+                      onAircraftClick(clickHandlersRef.current.get(icao24)!);
+                    }
+                  }
+                });
+
+                // Change cursor on hover
+                map.current.on('mouseenter', 'aircraft-planes', () => {
+                  if (map.current) {
+                    map.current.getCanvas().style.cursor = 'pointer';
+                  }
+                });
+
+                map.current.on('mouseleave', 'aircraft-planes', () => {
+                  if (map.current) {
+                    map.current.getCanvas().style.cursor = '';
+                  }
+                });
+                
+                console.log('[Map] Click handlers added to aircraft layer');
+                
                 // Icon and layer are ready - the useEffect for aircraft updates will restart the loop
                 console.log('[Map] Icon and layer ready, useEffect will restart animation loop');
               } else {
                 console.log('[Map] Aircraft layer already exists');
+                
+                // Layer exists but handlers might be missing - add them if needed
+                // Mapbox event listeners can be added multiple times, so this is safe
+                if (map.current) {
+                  map.current.on('click', 'aircraft-planes', (e) => {
+                    if (e.features && e.features[0]) {
+                      const icao24 = e.features[0].properties?.icao24;
+                      if (icao24 && clickHandlersRef.current.has(icao24)) {
+                        onAircraftClick(clickHandlersRef.current.get(icao24)!);
+                      }
+                    }
+                  });
+
+                  map.current.on('mouseenter', 'aircraft-planes', () => {
+                    if (map.current) {
+                      map.current.getCanvas().style.cursor = 'pointer';
+                    }
+                  });
+
+                  map.current.on('mouseleave', 'aircraft-planes', () => {
+                    if (map.current) {
+                      map.current.getCanvas().style.cursor = '';
+                    }
+                  });
+                  console.log('[Map] Click handlers re-added to existing layer');
+                }
               }
             });
 
@@ -194,29 +282,6 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 'line-width': 1,
                 'line-opacity': theme === 'light' ? 0.5 : 0.4,
               },
-            });
-
-            // Click handler for aircraft
-            map.current.on('click', 'aircraft-planes', (e) => {
-              if (e.features && e.features[0]) {
-                const icao24 = e.features[0].properties?.icao24;
-                if (icao24 && clickHandlersRef.current.has(icao24)) {
-                  onAircraftClick(clickHandlersRef.current.get(icao24)!);
-                }
-              }
-            });
-
-            // Change cursor on hover
-            map.current.on('mouseenter', 'aircraft-planes', () => {
-              if (map.current) {
-                map.current.getCanvas().style.cursor = 'pointer';
-              }
-            });
-
-            map.current.on('mouseleave', 'aircraft-planes', () => {
-              if (map.current) {
-                map.current.getCanvas().style.cursor = '';
-              }
             });
           } catch (layerError) {
             console.error('Error adding map layers:', layerError);
@@ -446,8 +511,10 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
     clickHandlersRef.current.clear();
 
     // Convert to GeoJSON with trails if enabled
+    const selectedIcao24 = selectedAircraft?.icao24 || null;
     const features = aircraftToDisplay.map(plane => {
       clickHandlersRef.current.set(plane.icao24, plane);
+      const isSelected = plane.icao24 === selectedIcao24;
       
       return {
         type: 'Feature' as const,
@@ -461,6 +528,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
           altitude: plane.baro_altitude || 0,
           velocity: plane.velocity || 0,
           heading: plane.true_track || 0,
+          isSelected: isSelected, // Add selection state for conditional icon
         },
       };
     });
@@ -581,7 +649,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         cancelAnimationFrame(updateIntervalRef.current);
       }
     };
-  }, [mapLoaded, viewMode, showTrails, userLocation, selectedCity, aircraft]);
+  }, [mapLoaded, viewMode, showTrails, userLocation, selectedCity, aircraft, selectedAircraft]);
 
   // Update map style and plane icon when theme changes
   useEffect(() => {
@@ -609,7 +677,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
     
     // Recreate plane icon with new theme after style loads
     map.current.once('style.load', () => {
-      const createPlaneIcon = (isLight: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
+      const createPlaneIcon = (isLight: boolean, isSelected: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
         const canvas = document.createElement('canvas');
         canvas.width = 24;
         canvas.height = 24;
@@ -617,11 +685,20 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         
         if (!ctx) return;
 
-        const fillColor = isLight ? '#475569' : '#e2e8f0';
-        const strokeColor = isLight ? '#334155' : '#cbd5e1';
+        // Colors: selected planes get orange/amber, regular planes are theme-aware
+        let fillColor: string;
+        let strokeColor: string;
+        
+        if (isSelected) {
+          fillColor = '#f59e0b'; // amber-500
+          strokeColor = '#d97706'; // amber-600
+        } else {
+          fillColor = isLight ? '#475569' : '#e2e8f0';
+          strokeColor = isLight ? '#334155' : '#cbd5e1';
+        }
 
         const svgData = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.5"/>
+<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${isSelected ? '1' : '0.5'}"/>
 </svg>`;
         
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
@@ -638,7 +715,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
           URL.revokeObjectURL(url);
           ctx.fillStyle = fillColor;
           ctx.strokeStyle = strokeColor;
-          ctx.lineWidth = 1;
+          ctx.lineWidth = isSelected ? 2 : 1;
           ctx.beginPath();
           ctx.moveTo(12, 2);
           ctx.lineTo(20, 10);
@@ -673,23 +750,43 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         });
       }
 
-      createPlaneIcon(theme === 'light', (imageData) => {
+      // Recreate both icons (regular and selected)
+      createPlaneIcon(theme === 'light', false, (imageData) => {
         if (map.current) {
           if (map.current.hasImage('plane-icon')) {
             map.current.removeImage('plane-icon');
           }
           map.current.addImage('plane-icon', imageData);
           console.log('[Map] Plane icon re-added after style change');
-          
-          // Re-add the layer if it was removed during style change
-          if (!map.current.getLayer('aircraft-planes')) {
+        }
+      });
+      
+      createPlaneIcon(theme === 'light', true, (imageData) => {
+        if (map.current) {
+          if (map.current.hasImage('plane-icon-selected')) {
+            map.current.removeImage('plane-icon-selected');
+          }
+          map.current.addImage('plane-icon-selected', imageData);
+          console.log('[Map] Selected plane icon re-added after style change');
+        }
+      });
+      
+      // Wait a moment for icons to load, then check if layer needs to be re-added
+      setTimeout(() => {
+        if (map.current && !map.current.getLayer('aircraft-planes')) {
             console.log('[Map] Re-adding aircraft-planes layer after style change');
             map.current.addLayer({
               id: 'aircraft-planes',
               type: 'symbol',
               source: 'aircraft',
               layout: {
-                'icon-image': 'plane-icon',
+                // Use conditional icon: selected planes get orange icon, others get regular
+                'icon-image': [
+                  'case',
+                  ['get', 'isSelected'],
+                  'plane-icon-selected',
+                  'plane-icon'
+                ],
                 'icon-size': [
                   'interpolate',
                   ['linear'],
@@ -708,6 +805,30 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
               },
             });
             console.log('[Map] Aircraft layer re-added after style change');
+            
+            // Re-add click handlers for aircraft (they're removed when style changes)
+            map.current.on('click', 'aircraft-planes', (e) => {
+              if (e.features && e.features[0]) {
+                const icao24 = e.features[0].properties?.icao24;
+                if (icao24 && clickHandlersRef.current.has(icao24)) {
+                  onAircraftClick(clickHandlersRef.current.get(icao24)!);
+                }
+              }
+            });
+
+            // Re-add cursor change on hover
+            map.current.on('mouseenter', 'aircraft-planes', () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = 'pointer';
+              }
+            });
+
+            map.current.on('mouseleave', 'aircraft-planes', () => {
+              if (map.current) {
+                map.current.getCanvas().style.cursor = '';
+              }
+            });
+            console.log('[Map] Click handlers re-added after style change');
           }
           
           // Force the animation loop to restart by triggering the useEffect
@@ -725,16 +846,16 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
           }, 100);
           
           // Re-add trails layer if it was removed during style change
-          if (!map.current.getLayer('trails')) {
+          if (map.current && !map.current.getLayer('trails')) {
             map.current.addSource('aircraft-trails', {
-              type: 'geojson',
-              data: {
-                type: 'FeatureCollection',
-                features: [],
-              },
-            });
-            
-            map.current.addLayer({
+                type: 'geojson',
+                data: {
+                  type: 'FeatureCollection',
+                  features: [],
+                },
+              });
+              
+              map.current.addLayer({
               id: 'trails',
               type: 'line',
               source: 'aircraft-trails',
@@ -744,7 +865,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 'line-opacity': theme === 'light' ? 0.5 : 0.4,
               },
             });
-          } else {
+          } else if (map.current) {
             // Update trails color when theme changes
             map.current.setPaintProperty('trails', 'line-color', theme === 'light' ? '#475569' : '#e2e8f0');
             map.current.setPaintProperty('trails', 'line-opacity', theme === 'light' ? 0.5 : 0.4);
@@ -752,18 +873,19 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
           
           // Trigger an aircraft data update now that sources are ready
           // The update loop will pick this up on the next frame
-          const aircraftSource = map.current.getSource('aircraft') as mapboxgl.GeoJSONSource;
-          if (aircraftSource) {
-            // Force a refresh by setting empty data then letting the update loop populate it
-            aircraftSource.setData({
-              type: 'FeatureCollection',
-              features: [],
-            });
+          if (map.current) {
+            const aircraftSource = map.current.getSource('aircraft') as mapboxgl.GeoJSONSource;
+            if (aircraftSource) {
+              // Force a refresh by setting empty data then letting the update loop populate it
+              aircraftSource.setData({
+                type: 'FeatureCollection',
+                features: [],
+              });
+            }
           }
-        }
+        }, 100);
       });
-    });
-  }, [theme, mapLoaded]);
+    }, [theme, mapLoaded]);
 
   return (
     <div className="absolute inset-0">

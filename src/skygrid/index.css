@@ -68,3 +68,18 @@
 .skygrid-app ::-webkit-scrollbar-thumb:hover {
   background: #2a2a2a;
 }
+
+@keyframes live-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: scale(0.9);
+  }
+}
+
+.live-dot {
+  animation: live-pulse 2s ease-in-out infinite;
+}

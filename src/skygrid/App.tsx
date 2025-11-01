@@ -381,7 +381,7 @@ function App() {
             theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
           }`} />
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400 live-dot" />
             <span className="text-xs uppercase tracking-widest text-green-400 font-medium">LIVE</span>
           </div>
           {currentLocation && (

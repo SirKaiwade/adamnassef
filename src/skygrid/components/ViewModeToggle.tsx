@@ -1,4 +1,5 @@
 import { MapPin, Globe, Navigation, Plane } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 import type { ViewMode } from '../types';
 
 interface ViewModeToggleProps {
@@ -7,11 +8,12 @@ interface ViewModeToggleProps {
 }
 
 export function ViewModeToggle({ viewMode, onViewModeChange }: ViewModeToggleProps) {
+  const { theme } = useTheme();
   const modes: Array<{ value: ViewMode; label: string; icon: React.ReactNode }> = [
     { value: 'local', label: 'Local', icon: <MapPin className="w-4 h-4" /> },
-    { value: 'regional', label: 'Regional', icon: <Navigation className="w-4 h-4" /> },
-    { value: 'global', label: 'Global', icon: <Globe className="w-4 h-4" /> },
-    { value: 'airport', label: 'Airport', icon: <Plane className="w-4 h-4" /> },
+    // { value: 'regional', label: 'Regional', icon: <Navigation className="w-4 h-4" /> }, // Hidden - local tracking only
+    // { value: 'global', label: 'Global', icon: <Globe className="w-4 h-4" /> }, // Hidden - local tracking only
+    // { value: 'airport', label: 'Airport', icon: <Plane className="w-4 h-4" /> }, // Hidden for now
   ];
 
   return (
@@ -21,12 +23,16 @@ export function ViewModeToggle({ viewMode, onViewModeChange }: ViewModeTogglePro
           key={mode.value}
           onClick={() => onViewModeChange(mode.value)}
           className={`
-            flex items-center gap-2 px-3 py-2 text-[10px] uppercase tracking-widest
+            flex items-center gap-2 px-3 py-1.5 rounded text-[10px] uppercase tracking-widest
             border transition-all font-medium
             ${
               viewMode === mode.value
-                ? 'bg-[#0a0a0a] border-slate-200 text-slate-200'
-                : 'bg-[#0a0a0a] border-[#1a1a1a] text-gray-500 hover:border-gray-600 hover:text-gray-400'
+                ? theme === 'light'
+                  ? 'border border-slate-200 bg-slate-50 text-slate-900'
+                  : 'border border-[#1a1a1a] bg-zinc-900 text-slate-200'
+                : theme === 'light'
+                  ? 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  : 'border border-[#1a1a1a] bg-zinc-900 text-gray-400 hover:text-gray-300'
             }
           `}
         >

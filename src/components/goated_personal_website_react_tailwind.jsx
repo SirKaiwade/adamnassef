@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ArrowRight, Github, Linkedin, Mail, ExternalLink, Download, Menu, X, Search, TerminalSquare, PlayCircle, Notebook, Rocket, Star, Sun, Moon } from "lucide-react";
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -302,10 +303,12 @@ const Hero = () => {
 
 const ProjectCard = ({ p }) => {
   const { theme } = useTheme();
-  return (
+  const mainLink = p.links && p.links.length > 0 ? p.links[0].href : null;
+  
+  const cardContent = (
     <motion.div
       whileHover={{ y: -4 }}
-      className={`group relative flex flex-col justify-between rounded-2xl border p-5 theme-transition ${
+      className={`group relative flex flex-col justify-between rounded-2xl border p-5 theme-transition cursor-pointer ${
         theme === 'light' 
           ? 'border-slate-200 bg-slate-50 hover:border-slate-300' 
           : 'border-zinc-800/80 bg-zinc-900/40 hover:border-zinc-700'
@@ -323,20 +326,32 @@ const ProjectCard = ({ p }) => {
         {p.tags.map((t) => (
           <Pill key={t}>{t}</Pill>
         ))}
-        <div className="ml-auto flex items-center gap-3">
-          {p.links.map((l) => (
-            <a key={l.label} href={l.href} className={`inline-flex items-center gap-1 text-sm theme-transition ${
-              theme === 'light' 
-                ? 'text-slate-600 hover:text-slate-900' 
-                : 'text-zinc-300 hover:text-white'
-            }`}>
-              {l.label} <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          ))}
-        </div>
+        {p.links && p.links.length > 0 && (
+          <div className="ml-auto flex items-center gap-3">
+            {p.links.map((l) => (
+              <span key={l.label} onClick={(e) => e.stopPropagation()} className={`inline-flex items-center gap-1 text-sm theme-transition ${
+                theme === 'light' 
+                  ? 'text-slate-600 hover:text-slate-900' 
+                  : 'text-zinc-300 hover:text-white'
+              }`}>
+                {l.label} <ExternalLink className="h-3.5 w-3.5" />
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </motion.div>
   );
+
+  if (mainLink) {
+    return (
+      <Link to={mainLink} className="block">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 };
 
 const TimelineItem = ({ role, org, time, points = [], links = [] }) => {
@@ -492,7 +507,13 @@ const CommandPalette = ({ open, setOpen }) => {
 
 export default function GoatedPersonalSite() {
   const [openCmd, setOpenCmd] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const { theme } = useTheme();
+
+  useEffect(() => {
+    // Fade in when component mounts
+    setIsVisible(true);
+  }, []);
   
   useKeyboard({
     k: (e) => {
@@ -504,7 +525,18 @@ export default function GoatedPersonalSite() {
   });
 
   return (
-    <div id="top" className={`min-h-screen theme-transition ${theme === 'light' ? 'bg-white text-slate-900' : 'bg-zinc-950 text-zinc-50'}`}>
+    <>
+      {!isVisible && (
+        <div className={`fixed inset-0 z-[100] flex items-center justify-center theme-transition ${theme === 'light' ? 'bg-white' : 'bg-zinc-950'}`}>
+          <div className={`font-mono text-sm uppercase tracking-widest theme-transition ${theme === 'light' ? 'text-slate-600' : 'text-zinc-400'}`}>
+            Initializing...
+          </div>
+        </div>
+      )}
+      <div 
+        id="top" 
+        className={`min-h-screen theme-transition transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'} ${theme === 'light' ? 'bg-white text-slate-900' : 'bg-zinc-950 text-zinc-50'}`}
+      >
       <Nav onOpenCmd={() => setOpenCmd(true)} />
       <Hero />
 
@@ -695,6 +727,7 @@ export default function GoatedPersonalSite() {
           ? 'opacity-10' 
           : 'opacity-20'
       } ${classNames(PROFILE.accent)}`} />
-    </div>
+      </div>
+    </>
   );
 }

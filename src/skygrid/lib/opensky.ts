@@ -165,14 +165,23 @@ export class OpenSkyAPI {
 
       const data: AirplanesLiveResponse = await response.json();
 
+      console.log('[API] Raw response from', url, ':', {
+        aircraftCount: data.ac?.length || 0,
+        hasMsg: !!data.msg,
+        msg: data.msg,
+        ctime: data.ctime
+      });
+
       if (!data.ac || data.ac.length === 0) {
+        console.log('[API] No aircraft in response');
         return [];
       }
 
       // Convert airplanes.live format to our AircraftState format
-      return data.ac
-        .filter(ac => ac.lat !== undefined && ac.lon !== undefined)
-        .map(ac => ({
+      const filtered = data.ac.filter(ac => ac.lat !== undefined && ac.lon !== undefined);
+      console.log('[API] Filtered', filtered.length, 'aircraft with valid coordinates from', data.ac.length, 'total');
+      
+      return filtered.map(ac => ({
           icao24: ac.hex.toLowerCase(),
           callsign: ac.flight?.trim() || null,
           origin_country: ac.r || 'Unknown',
@@ -181,7 +190,9 @@ export class OpenSkyAPI {
           longitude: ac.lon!,
           latitude: ac.lat!,
           baro_altitude: ac.altitude ? ac.altitude / 3.28084 : null, // Convert feet to meters
-          on_ground: ac.altitude === 0 || (ac.altitude !== undefined && ac.altitude < 100),
+          // Only mark as on_ground if altitude is exactly 0 or explicitly very low (< 50 feet)
+          // Many aircraft below 100 feet are still in flight (takeoff/landing)
+          on_ground: ac.altitude === 0 || (ac.altitude !== undefined && ac.altitude < 50),
           velocity: ac.speed ? ac.speed / 1.944 : null, // Convert knots to m/s
           true_track: ac.track || null,
           vertical_rate: ac.vert_rate ? ac.vert_rate / 196.85 : null, // Convert ft/min to m/s

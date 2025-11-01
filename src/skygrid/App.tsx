@@ -1,4 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import { ViewModeToggle } from './components/ViewModeToggle';
 import { LayerToggle } from './components/LayerToggle';
 import { Sidebar } from './components/Sidebar';
@@ -8,7 +11,8 @@ import { useAircraftData } from './hooks/useAircraftData';
 import type { ViewMode, Aircraft } from './types';
 
 function App() {
-  const [viewMode, setViewMode] = useState<ViewMode>('global');
+  const { theme, toggleTheme } = useTheme();
+  const [viewMode, setViewMode] = useState<ViewMode>('local');
   const [selectedCity, setSelectedCity] = useState<{ name: string; lat: number; lon: number } | null>(null);
   const [radiusKm, setRadiusKm] = useState(500);
   const [selectedAircraft, setSelectedAircraft] = useState<Aircraft | null>(null);
@@ -43,11 +47,12 @@ function App() {
           setViewMode('regional');
           break;
         case 'g':
-          setViewMode('global');
+          // Global disabled - local tracking only
+          setViewMode('local');
           break;
-        case 'a':
-          setViewMode('airport');
-          break;
+        // case 'a':
+        //   setViewMode('airport'); // Hidden for now
+        //   break;
         case 't':
           setLayers(prev => ({ ...prev, trails: !prev.trails }));
           break;
@@ -93,23 +98,33 @@ function App() {
 
   // Auto-set local view to user's location when available
   useEffect(() => {
-    if (viewMode === 'local' && !selectedCity && userCoordinates) {
-      const cityName = currentLocation?.city || 'Your Location';
-      console.log('[App] Auto-setting local view to:', cityName, userCoordinates);
-      setSelectedCity({
-        name: cityName,
-        lat: userCoordinates.lat,
-        lon: userCoordinates.lon,
-      });
+    if (viewMode === 'local' && !selectedCity) {
+      if (userCoordinates) {
+        const cityName = currentLocation?.city || 'Your Location';
+        console.log('[App] Auto-setting local view to:', cityName, userCoordinates);
+        setSelectedCity({
+          name: cityName,
+          lat: userCoordinates.lat,
+          lon: userCoordinates.lon,
+        });
+      } else {
+        // Set a default location (Toronto) if user location isn't available yet
+        console.log('[App] No user location yet, setting default to Toronto');
+        setSelectedCity({
+          name: 'Toronto',
+          lat: 43.6532,
+          lon: -79.3832,
+        });
+      }
     }
   }, [viewMode, selectedCity, userCoordinates, currentLocation]);
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
-    if (mode === 'local' && !selectedCity) {
+    if (mode === 'local') {
       console.log('[App] Setting local view - userCoordinates:', userCoordinates, 'currentLocation:', currentLocation);
       
-      // Use user's actual location if available
+      // Always set to user's location when clicking Local (pan back to their city)
       if (userCoordinates) {
         const cityName = currentLocation?.city || 'Your Location';
         setSelectedCity({
@@ -122,6 +137,27 @@ function App() {
         // If no coordinates yet, the useEffect above will set it when available
         console.log('[App] No userCoordinates yet, will auto-set when available');
       }
+    }
+  };
+
+  const handleThemeToggle = () => {
+    toggleTheme();
+    // Automatically pan to local view when theme changes
+    setViewMode('local');
+    if (userCoordinates) {
+      const cityName = currentLocation?.city || 'Your Location';
+      setSelectedCity({
+        name: cityName,
+        lat: userCoordinates.lat,
+        lon: userCoordinates.lon,
+      });
+    } else if (!selectedCity) {
+      // Set default location if no user coordinates and no selected city
+      setSelectedCity({
+        name: 'Toronto',
+        lat: 43.6532,
+        lon: -79.3832,
+      });
     }
   };
 
@@ -328,20 +364,34 @@ function App() {
   };
 
   return (
-    <div className="relative w-screen h-screen bg-black overflow-hidden">
+    <div className={`relative w-screen h-screen overflow-hidden ${
+      theme === 'light' ? 'bg-slate-50' : 'bg-black'
+    }`}>
       {/* Top Header Bar */}
-      <div className="absolute top-0 left-0 right-0 h-14 bg-[#0a0a0a] border-b border-[#1a1a1a] z-30 flex items-center justify-between px-6">
+      <div className={`absolute top-0 left-0 right-0 h-14 z-30 flex items-center justify-between px-6 ${
+        theme === 'light' 
+          ? 'bg-white border-b border-slate-200' 
+          : 'bg-[#0a0a0a] border-b border-[#1a1a1a]'
+      }`}>
         <div className="flex items-center gap-6">
-          <div className="text-lg font-semibold text-white tracking-wide">SKYGRID</div>
-          <div className="w-px h-5 bg-[#1a1a1a]" />
+          <div className={`text-lg font-semibold tracking-wide ${
+            theme === 'light' ? 'text-slate-900' : 'text-white'
+          }`}>SKYGRID</div>
+          <div className={`w-px h-5 ${
+            theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+          }`} />
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
             <span className="text-xs uppercase tracking-widest text-green-400 font-medium">LIVE</span>
           </div>
           {currentLocation && (
             <>
-              <div className="w-px h-5 bg-[#1a1a1a]" />
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className={`w-px h-5 ${
+                theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+              }`} />
+              <div className={`flex items-center gap-2 text-xs ${
+                theme === 'light' ? 'text-slate-600' : 'text-gray-400'
+              }`}>
                 <span className="text-lg">{currentLocation.flag}</span>
                 <span>
                   {currentLocation.city}
@@ -352,15 +402,40 @@ function App() {
           )}
         </div>
 
-        <div className="flex items-center gap-6 text-xs text-gray-400">
-          <span className="font-medium">{currentDate}</span>
-          <span className="text-gray-500">•</span>
-          <span className="font-mono">{currentTime}</span>
+        <div className="flex items-center gap-6">
+                <button
+                  onClick={handleThemeToggle}
+                  className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border transition-all duration-300 ${
+                    theme === 'light' 
+                      ? 'border-slate-300 bg-slate-100 hover:bg-slate-200' 
+                      : 'border-[#1a1a1a] bg-[#0a0a0a] hover:bg-[#1a1a1a]'
+                  }`}
+                  aria-label="Toggle theme"
+                >
+            <motion.div
+              initial={false}
+              animate={{ rotate: theme === 'dark' ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4 text-yellow-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-blue-400" />
+              )}
+            </motion.div>
+          </button>
           
-          {pingMs > 0 && (() => {
+          <div className={`flex items-center gap-6 text-xs ${
+            theme === 'light' ? 'text-slate-600' : 'text-gray-400'
+          }`}>
+            <span className="font-medium">{currentDate}</span>
+            <span className={theme === 'light' ? 'text-slate-400' : 'text-gray-500'}>•</span>
+            <span className="font-mono">{currentTime}</span>
+            
+            {pingMs > 0 && (() => {
             // Determine color based on ping quality
             let iconColor = 'green';
-            let textColor = 'text-green-400';
+            let textColor = theme === 'light' ? 'text-[#35C46A]' : 'text-green-400';
             
             if (pingMs > 500) {
               iconColor = 'red';
@@ -371,7 +446,12 @@ function App() {
             }
             
             // CSS filter to convert white icon to the appropriate color
-            const iconFilters: Record<string, string> = {
+            // Use darker filters for light mode, lighter for dark mode
+            const iconFilters: Record<string, string> = theme === 'light' ? {
+              green: 'brightness(0) saturate(100%) invert(42%) sepia(96%) saturate(1352%) hue-rotate(90deg) brightness(92%) contrast(85%)', // Darker green for light mode (#35C46A)
+              yellow: 'brightness(0) saturate(100%) invert(75%) sepia(90%) saturate(7500%) hue-rotate(5deg) brightness(95%) contrast(105%)',
+              red: 'brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(4214%) hue-rotate(342deg) brightness(99%) contrast(96%)',
+            } : {
               green: 'brightness(0) saturate(100%) invert(69%) sepia(95%) saturate(352%) hue-rotate(85deg) brightness(95%) contrast(95%)',
               yellow: 'brightness(0) saturate(100%) invert(85%) sepia(90%) saturate(7500%) hue-rotate(5deg) brightness(105%) contrast(105%)',
               red: 'brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(4214%) hue-rotate(342deg) brightness(99%) contrast(96%)',
@@ -379,8 +459,14 @@ function App() {
             
             return (
               <>
-                <div className="w-px h-5 bg-[#1a1a1a]" />
-                <div className={`flex items-center gap-2 px-3 py-1.5 border border-[#1a1a1a] rounded ${textColor}`}>
+                <div className={`w-px h-5 ${
+                  theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+                }`} />
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded ${textColor} ${
+                  theme === 'light' 
+                    ? 'border border-slate-200 bg-slate-50' 
+                    : 'border border-[#1a1a1a]'
+                }`}>
                   <img 
                     src="/1520228-200.png" 
                     alt="live" 
@@ -397,6 +483,7 @@ function App() {
               </>
             );
           })()}
+          </div>
         </div>
       </div>
 
@@ -404,7 +491,7 @@ function App() {
 
       <ViewModeToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
 
-      <LayerToggle layers={layers} onToggle={handleLayerToggle} />
+      {/* <LayerToggle layers={layers} onToggle={handleLayerToggle} /> */} {/* Hidden for now - doesn't work */}
 
       {viewMode === 'local' && (
         <LocationSelector
@@ -446,52 +533,91 @@ function App() {
       )}
 
       {isLoading && (
-        <div className="absolute bottom-6 right-6 z-10 flex items-center gap-2 px-4 py-2 bg-[#0a0a0a] border border-[#1a1a1a]">
+        <div className={`absolute bottom-6 right-6 z-10 flex items-center gap-2 px-4 py-2 ${
+          theme === 'light' 
+            ? 'bg-white border border-slate-200' 
+            : 'bg-[#0a0a0a] border border-[#1a1a1a]'
+        }`}>
           <div className="w-1.5 h-1.5 rounded-full bg-slate-200 animate-pulse" />
-          <span className="text-xs uppercase tracking-wider text-slate-200">
+          <span className={`text-xs uppercase tracking-wider ${
+            theme === 'light' ? 'text-slate-700' : 'text-slate-200'
+          }`}>
             Loading Aircraft Data
           </span>
         </div>
       )}
 
       {/* Bottom Metrics Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-[#0a0a0a] border-t border-[#1a1a1a] z-30">
-        <div className="h-full flex items-center justify-between px-6 gap-6">
+      <div className={`absolute bottom-0 left-0 right-0 h-20 z-30 ${
+        theme === 'light' 
+          ? 'bg-white border-t border-slate-200' 
+          : 'bg-[#0a0a0a] border-t border-[#1a1a1a]'
+      }`}>
+        <div className="h-full flex items-center justify-center px-6 gap-6">
           <div className="flex items-center gap-6">
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">TRACKED</div>
-              <div className="text-2xl font-medium text-white">{metrics.activeAircraft}</div>
+              <div className={`text-[10px] uppercase tracking-widest mb-1 ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`}>TRACKED</div>
+              <div className={`text-2xl font-medium ${
+                theme === 'light' ? 'text-slate-900' : 'text-white'
+              }`}>{metrics.activeAircraft}</div>
             </div>
-            <div className="w-px h-12 bg-[#1a1a1a]" />
+            <div className={`w-px h-12 ${
+              theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+            }`} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">AVG ALT</div>
-              <div className="text-2xl font-medium text-white">{Math.round(metrics.avgAltitude).toLocaleString()}</div>
+              <div className={`text-[10px] uppercase tracking-widest mb-1 ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`}>AVG ALT</div>
+              <div className={`text-2xl font-medium ${
+                theme === 'light' ? 'text-slate-900' : 'text-white'
+              }`}>{Math.round(metrics.avgAltitude).toLocaleString()}</div>
             </div>
-            <div className="w-px h-12 bg-[#1a1a1a]" />
+            <div className={`w-px h-12 ${
+              theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+            }`} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">MAX SPEED</div>
-              <div className="text-2xl font-medium text-white">{Math.round(metrics.maxSpeed).toLocaleString()}</div>
+              <div className={`text-[10px] uppercase tracking-widest mb-1 ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`}>MAX SPEED</div>
+              <div className={`text-2xl font-medium ${
+                theme === 'light' ? 'text-slate-900' : 'text-white'
+              }`}>{Math.round(metrics.maxSpeed).toLocaleString()}</div>
             </div>
-            <div className="w-px h-12 bg-[#1a1a1a]" />
+            <div className={`w-px h-12 ${
+              theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+            }`} />
             <div>
-              <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">AVG SPEED</div>
-              <div className="text-2xl font-medium text-white">{Math.round(metrics.avgSpeed).toLocaleString()}</div>
+              <div className={`text-[10px] uppercase tracking-widest mb-1 ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`}>AVG SPEED</div>
+              <div className={`text-2xl font-medium ${
+                theme === 'light' ? 'text-slate-900' : 'text-white'
+              }`}>{Math.round(metrics.avgSpeed).toLocaleString()}</div>
             </div>
           </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider">
-              L=Local | R=Regional | G=Global | T=Trails | ESC=Deselect
-            </div>
-            {ipAddress && (
-              <>
-                <div className="w-px h-12 bg-[#1a1a1a]" />
-                <div className="text-[10px] text-gray-500">
-                  Connected from <span className="text-gray-400 font-mono">{ipAddress}</span>
-                </div>
-              </>
-            )}
+        </div>
+        <div className="absolute bottom-0 right-6 h-20 flex items-center gap-6">
+          <div className={`text-[10px] uppercase tracking-wider ${
+            theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+          }`}>
+            L=Local | R=Regional | G=Global | T=Trails | ESC=Deselect
           </div>
+          {ipAddress && (
+            <>
+              <div className={`w-px h-12 ${
+                theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+              }`} />
+              <div className={`text-[10px] ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`}>
+                Connected from <span className={`font-mono ${
+                  theme === 'light' ? 'text-slate-400' : 'text-gray-400'
+                }`}>{ipAddress}</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

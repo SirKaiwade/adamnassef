@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Search, MapPin } from 'lucide-react';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface LocationSelectorProps {
   onSelectCity: (city: { name: string; lat: number; lon: number }) => void;
@@ -23,6 +24,7 @@ const MAJOR_CITIES = [
 ];
 
 export function LocationSelector({ onSelectCity, radiusKm, onRadiusChange }: LocationSelectorProps) {
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -40,23 +42,39 @@ export function LocationSelector({ onSelectCity, radiusKm, onRadiusChange }: Loc
     <div className="absolute bottom-6 left-6 z-10">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 bg-[#0a0a0a] border border-[#1a1a1a] text-gray-400 hover:text-slate-200 hover:border-slate-200 transition-all text-[10px] uppercase tracking-widest font-medium"
+        className={`flex items-center gap-2 px-3 py-2 border transition-all text-[10px] uppercase tracking-widest font-medium ${
+          theme === 'light'
+            ? 'bg-white border-slate-300 text-slate-600 hover:text-slate-900 hover:border-slate-400'
+            : 'bg-[#0a0a0a] border-slate-700 text-gray-400 hover:text-slate-200 hover:border-slate-600'
+        }`}
       >
         <MapPin className="w-3 h-3" />
         <span>Select Location</span>
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full left-0 mb-2 w-80 bg-[#0a0a0a] border border-[#1a1a1a]">
-          <div className="p-4 border-b border-[#1a1a1a]">
+        <div className={`absolute bottom-full left-0 mb-2 w-80 border ${
+          theme === 'light'
+            ? 'bg-white border-slate-300'
+            : 'bg-[#0a0a0a] border-slate-700'
+        }`}>
+          <div className={`p-4 border-b ${
+            theme === 'light' ? 'border-slate-200' : 'border-slate-700'
+          }`}>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500" />
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 ${
+                theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+              }`} />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search cities..."
-                className="w-full pl-9 pr-4 py-2 bg-[#0a0a0a] border border-[#1a1a1a] text-white text-xs focus:outline-none focus:border-slate-200 font-mono"
+                className={`w-full pl-9 pr-4 py-2 border text-xs focus:outline-none font-mono ${
+                  theme === 'light'
+                    ? 'bg-white border-slate-300 text-slate-900 focus:border-slate-400'
+                    : 'bg-[#0a0a0a] border-slate-700 text-white focus:border-slate-500'
+                }`}
               />
             </div>
           </div>
@@ -66,15 +84,23 @@ export function LocationSelector({ onSelectCity, radiusKm, onRadiusChange }: Loc
               <button
                 key={city.name}
                 onClick={() => handleSelectCity(city)}
-                className="w-full px-3 py-2 text-left text-xs text-gray-400 hover:bg-[#1a1a1a] hover:text-slate-200 transition-colors font-mono"
+                className={`w-full px-3 py-2 text-left text-xs transition-colors font-mono ${
+                  theme === 'light'
+                    ? 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    : 'text-gray-400 hover:bg-[#1a1a1a] hover:text-slate-200'
+                }`}
               >
                 {city.name}
               </button>
             ))}
           </div>
 
-          <div className="p-4 border-t border-[#1a1a1a]">
-            <div className="text-[10px] uppercase tracking-widest text-gray-500 mb-3 font-medium">Radius: {radiusKm}km</div>
+          <div className={`p-4 border-t ${
+            theme === 'light' ? 'border-slate-200' : 'border-slate-700'
+          }`}>
+            <div className={`text-[10px] uppercase tracking-widest mb-3 font-medium ${
+              theme === 'light' ? 'text-slate-500' : 'text-gray-500'
+            }`}>Radius: {radiusKm}km</div>
             <input
               type="range"
               min="50"
@@ -82,9 +108,13 @@ export function LocationSelector({ onSelectCity, radiusKm, onRadiusChange }: Loc
               step="50"
               value={radiusKm}
               onChange={(e) => onRadiusChange(Number(e.target.value))}
-              className="w-full h-1 bg-[#1a1a1a] appearance-none cursor-pointer"
+              className={`w-full h-1 appearance-none cursor-pointer ${
+                theme === 'light' ? 'bg-slate-200' : 'bg-[#1a1a1a]'
+              }`}
               style={{
-                background: `linear-gradient(to right, #e2e8f0 0%, #e2e8f0 ${((radiusKm - 50) / 950) * 100}%, #1a1a1a ${((radiusKm - 50) / 950) * 100}%, #1a1a1a 100%)`
+                background: theme === 'light'
+                  ? `linear-gradient(to right, #475569 0%, #475569 ${((radiusKm - 50) / 950) * 100}%, #cbd5e1 ${((radiusKm - 50) / 950) * 100}%, #cbd5e1 100%)`
+                  : `linear-gradient(to right, #e2e8f0 0%, #e2e8f0 ${((radiusKm - 50) / 950) * 100}%, #1a1a1a ${((radiusKm - 50) / 950) * 100}%, #1a1a1a 100%)`
               }}
             />
           </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { useTheme } from '../../contexts/ThemeContext';
 import type { Aircraft, ViewMode } from '../types';
 
 mapboxgl.accessToken = 'pk.eyJ1Ijoia2Fpd2FkZSIsImEiOiJjbWhnbXZhOG0wampxMmtweWptcHZidDZvIn0.WVrZhW8TIwgPIV83WbX4xw';
@@ -20,6 +21,7 @@ interface AircraftWithTimestamp extends Aircraft {
 }
 
 export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, showTrails, onAircraftClick }: MapProps) {
+  const { theme } = useTheme();
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -28,6 +30,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
   // Keep aircraft visible even if they're not in the latest fetch (for smooth transitions)
   const smoothedAircraftRef = useRef<Map<string, AircraftWithTimestamp>>(new Map());
   const updateIntervalRef = useRef<number | null>(null);
+  const prevThemeRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -41,7 +44,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/dark-v11',
+        style: theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11',
         center: [0, 20],
         zoom: 2,
         projection: 'mercator' as any,
@@ -52,8 +55,8 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
 
         if (map.current) {
           try {
-            // Create plane icon by converting SVG to canvas/ImageData
-            const createPlaneIcon = (callback: (image: HTMLImageElement | ImageData) => void) => {
+            // Create plane icon by converting SVG to canvas/ImageData (original working approach)
+            const createPlaneIcon = (isLight: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
               const canvas = document.createElement('canvas');
               canvas.width = 24;
               canvas.height = 24;
@@ -64,9 +67,13 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 return;
               }
 
+              // Theme-aware colors: dark gray for light mode, light gray for dark mode
+              const fillColor = isLight ? '#475569' : '#e2e8f0'; // slate-600 for light, slate-200 for dark
+              const strokeColor = isLight ? '#334155' : '#cbd5e1'; // slate-700 for light, slate-300 for dark
+
               // Create an image from SVG data URI
               const svgData = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="0.5"/>
+<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.5"/>
 </svg>`;
               
               const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
@@ -76,6 +83,7 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
               img.onload = () => {
                 ctx.drawImage(img, 0, 0);
                 const imageData = ctx.getImageData(0, 0, 24, 24);
+                console.log('[Map] Plane icon created from SVG');
                 callback(imageData);
                 URL.revokeObjectURL(url);
               };
@@ -83,8 +91,8 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                 console.error('Error loading SVG image');
                 URL.revokeObjectURL(url);
                 // Fallback: create a simple plane shape using canvas
-                ctx.fillStyle = '#e2e8f0';
-                ctx.strokeStyle = '#cbd5e1';
+                ctx.fillStyle = fillColor;
+                ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(12, 2);
@@ -119,13 +127,23 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
             });
 
             // Create and load icon
-            createPlaneIcon((imageData) => {
-              if (map.current && !map.current.hasImage('plane-icon')) {
-                map.current.addImage('plane-icon', imageData);
+            createPlaneIcon(theme === 'light', (imageData) => {
+              if (map.current) {
+                // Remove old icon if it exists
+                if (map.current.hasImage('plane-icon')) {
+                  map.current.removeImage('plane-icon');
+                }
+                try {
+                  map.current.addImage('plane-icon', imageData);
+                  console.log('[Map] Plane icon added successfully, hasImage check:', map.current.hasImage('plane-icon'));
+                } catch (error) {
+                  console.error('[Map] Error adding plane icon to map:', error);
+                }
               }
               
               // Only add layer if it doesn't exist
               if (map.current && !map.current.getLayer('aircraft-planes')) {
+                console.log('[Map] Adding aircraft-planes layer');
                 map.current.addLayer({
                   id: 'aircraft-planes',
                   type: 'symbol',
@@ -142,13 +160,19 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
                     ],
                     'icon-rotate': ['get', 'heading'],
                     'icon-rotation-alignment': 'map',
-                    'icon-allow-overlap': false,
-                    'icon-ignore-placement': false,
+                    'icon-allow-overlap': true, // Allow overlap so all planes are visible
+                    'icon-ignore-placement': true, // Ignore label placement conflicts
                   },
                   paint: {
                     'icon-opacity': 0.9,
                   },
                 });
+                console.log('[Map] Aircraft layer added, source exists:', !!map.current.getSource('aircraft'));
+                
+                // Icon and layer are ready - the useEffect for aircraft updates will restart the loop
+                console.log('[Map] Icon and layer ready, useEffect will restart animation loop');
+              } else {
+                console.log('[Map] Aircraft layer already exists');
               }
             });
 
@@ -166,9 +190,9 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
               type: 'line',
               source: 'aircraft-trails',
               paint: {
-                'line-color': '#e2e8f0',
+                'line-color': theme === 'light' ? '#475569' : '#e2e8f0', // slate-600 for light, slate-200 for dark
                 'line-width': 1,
-                'line-opacity': 0.4,
+                'line-opacity': theme === 'light' ? 0.5 : 0.4,
               },
             });
 
@@ -214,7 +238,8 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
       map.current?.remove();
       map.current = null;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]); // Re-run when theme changes to update initial colors
 
   useEffect(() => {
     if (!map.current) return;
@@ -224,10 +249,10 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         map.current.flyTo({ center: [0, 20], zoom: 2, duration: 2000 });
         break;
       case 'local':
-        // Use selectedCity if available, otherwise fall back to userLocation
-        const locationToUse = selectedCity || (userLocation ? { lat: userLocation.lat, lon: userLocation.lon } : null);
+        // Always use selectedCity if available, otherwise fall back to userLocation
+        const locationToUse = selectedCity || (userLocation ? { lat: userLocation.lat, lon: userLocation.lon, name: 'Your Location' } : null);
         if (locationToUse) {
-          map.current.flyTo({ center: [locationToUse.lon, locationToUse.lat], zoom: 7, duration: 2000 });
+          map.current.flyTo({ center: [locationToUse.lon, locationToUse.lat], zoom: 8, duration: 1500 });
         }
         break;
       case 'regional':
@@ -248,13 +273,25 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
     const now = Date.now();
     const staleTimeout = 30000; // Remove aircraft if not seen for 30 seconds
 
+    console.log('[Map] Received aircraft data:', aircraft.length, 'aircraft');
+    console.log('[Map] Sample aircraft:', aircraft.slice(0, 3).map(a => ({
+      icao24: a.icao24,
+      lat: a.latitude,
+      lon: a.longitude,
+      on_ground: a.on_ground,
+      altitude: a.baro_altitude
+    })));
+
     // Update latest aircraft reference (target positions)
     latestAircraftRef.current.clear();
+    let validCount = 0;
     aircraft.forEach(plane => {
       if (plane.longitude && plane.latitude && !plane.on_ground) {
         latestAircraftRef.current.set(plane.icao24, plane);
+        validCount++;
       }
     });
+    console.log('[Map] Valid aircraft (not on ground, has coords):', validCount);
 
     // Initialize smoothed aircraft if they don't exist yet
     aircraft.forEach(plane => {
@@ -294,10 +331,17 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
     // Clear any existing update interval
     if (updateIntervalRef.current) {
       cancelAnimationFrame(updateIntervalRef.current);
+      updateIntervalRef.current = null;
     }
 
     const updatePositions = () => {
-      if (!map.current) return;
+      if (!map.current) {
+        if (updateIntervalRef.current) {
+          cancelAnimationFrame(updateIntervalRef.current);
+          updateIntervalRef.current = null;
+        }
+        return;
+      }
 
       const now = Date.now();
       const staleTimeout = 30000;
@@ -462,20 +506,70 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
       }
     }
 
-      // Update the source
+      // Update the source - make sure it exists first
       const source = map.current.getSource('aircraft') as mapboxgl.GeoJSONSource;
-      if (source) {
+      if (!source) {
+        // Source doesn't exist yet - stop the animation loop until it's ready
+        // Don't create infinite loop by calling requestAnimationFrame here
+        if (updateIntervalRef.current) {
+          cancelAnimationFrame(updateIntervalRef.current);
+          updateIntervalRef.current = null;
+        }
+        return;
+      }
+
+      // Check if layer exists
+      const layer = map.current.getLayer('aircraft-planes');
+      const hasIcon = map.current.hasImage('plane-icon');
+      
+      if (!layer || !hasIcon) {
+        // Layer or icon not ready - stop the animation loop until ready
+        if (updateIntervalRef.current) {
+          cancelAnimationFrame(updateIntervalRef.current);
+          updateIntervalRef.current = null;
+        }
+        console.warn('[Map] Missing prerequisites - layer:', !!layer, 'icon:', hasIcon, '- stopping update loop');
+        return;
+      }
+      
+      // Source exists, update the data
+      console.log('[Map] Updating source with', features.length, 'features', {
+        hasSource: !!source,
+        hasLayer: !!layer,
+        hasIcon: hasIcon,
+        sampleFeature: features[0] ? {
+          type: features[0].type,
+          coordinates: features[0].geometry.coordinates,
+          properties: features[0].properties
+        } : null,
+        mapZoom: map.current.getZoom(),
+        mapCenter: map.current.getCenter ? map.current.getCenter() : null
+      });
+      
+      try {
         source.setData({
           type: 'FeatureCollection',
           features,
         });
+        console.log('[Map] Source data updated successfully');
+      } catch (error) {
+        console.error('[Map] Error updating source data:', error);
       }
 
       // Update previous aircraft for trails
       previousAircraftRef.current = new Map(aircraftToDisplay.map(a => [a.icao24, a]));
       
-      // Continue animation loop
-      updateIntervalRef.current = requestAnimationFrame(updatePositions);
+      // Continue animation loop - only if source, layer, and icon all exist
+      const sourceStillExists = map.current.getSource('aircraft');
+      const layerStillExists = map.current.getLayer('aircraft-planes');
+      const iconStillExists = map.current.hasImage('plane-icon');
+      
+      if (sourceStillExists && layerStillExists && iconStillExists) {
+        updateIntervalRef.current = requestAnimationFrame(updatePositions);
+      } else {
+        // Stop loop if something is missing
+        updateIntervalRef.current = null;
+      }
     };
 
     // Start the animation loop
@@ -487,17 +581,205 @@ export function AircraftMap({ aircraft, viewMode, selectedCity, userLocation, sh
         cancelAnimationFrame(updateIntervalRef.current);
       }
     };
-  }, [mapLoaded, viewMode, showTrails, userLocation, selectedCity]);
+  }, [mapLoaded, viewMode, showTrails, userLocation, selectedCity, aircraft]);
+
+  // Update map style and plane icon when theme changes
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    
+    // Don't change style on initial mount - only on actual theme changes
+    // The initial style is already set correctly in the map creation useEffect
+    if (prevThemeRef.current === null) {
+      // First time, just store the current theme
+      prevThemeRef.current = theme;
+      return;
+    }
+    
+    // Check if theme actually changed
+    if (prevThemeRef.current === theme) {
+      // Theme hasn't actually changed, skip
+      return;
+    }
+    
+    console.log('[Map] Theme changed from', prevThemeRef.current, 'to', theme, '- updating map style');
+    prevThemeRef.current = theme;
+    
+    const newStyle = theme === 'light' ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/dark-v11';
+    map.current.setStyle(newStyle);
+    
+    // Recreate plane icon with new theme after style loads
+    map.current.once('style.load', () => {
+      const createPlaneIcon = (isLight: boolean, callback: (image: HTMLImageElement | ImageData) => void) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 24;
+        canvas.height = 24;
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) return;
+
+        const fillColor = isLight ? '#475569' : '#e2e8f0';
+        const strokeColor = isLight ? '#334155' : '#cbd5e1';
+
+        const svgData = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="0.5"/>
+</svg>`;
+        
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, 24, 24);
+          callback(imageData);
+          URL.revokeObjectURL(url);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          ctx.fillStyle = fillColor;
+          ctx.strokeStyle = strokeColor;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(12, 2);
+          ctx.lineTo(20, 10);
+          ctx.lineTo(16, 12);
+          ctx.lineTo(12, 10);
+          ctx.lineTo(4, 14);
+          ctx.lineTo(8, 16);
+          ctx.lineTo(12, 14);
+          ctx.lineTo(16, 16);
+          ctx.lineTo(20, 14);
+          ctx.lineTo(16, 12);
+          ctx.lineTo(12, 22);
+          ctx.lineTo(10, 20);
+          ctx.lineTo(12, 14);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          const imageData = ctx.getImageData(0, 0, 24, 24);
+          callback(imageData);
+        };
+        img.src = url;
+      };
+
+      // Re-add aircraft source if it was removed during style change
+      if (map.current && !map.current.getSource('aircraft')) {
+        map.current.addSource('aircraft', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [],
+          },
+        });
+      }
+
+      createPlaneIcon(theme === 'light', (imageData) => {
+        if (map.current) {
+          if (map.current.hasImage('plane-icon')) {
+            map.current.removeImage('plane-icon');
+          }
+          map.current.addImage('plane-icon', imageData);
+          console.log('[Map] Plane icon re-added after style change');
+          
+          // Re-add the layer if it was removed during style change
+          if (!map.current.getLayer('aircraft-planes')) {
+            console.log('[Map] Re-adding aircraft-planes layer after style change');
+            map.current.addLayer({
+              id: 'aircraft-planes',
+              type: 'symbol',
+              source: 'aircraft',
+              layout: {
+                'icon-image': 'plane-icon',
+                'icon-size': [
+                  'interpolate',
+                  ['linear'],
+                  ['zoom'],
+                  2, 0.6,
+                  5, 0.8,
+                  8, 1.0,
+                ],
+                'icon-rotate': ['get', 'heading'],
+                'icon-rotation-alignment': 'map',
+                'icon-allow-overlap': true, // Allow overlap so all planes are visible
+                'icon-ignore-placement': true, // Ignore label placement conflicts
+              },
+              paint: {
+                'icon-opacity': 0.9,
+              },
+            });
+            console.log('[Map] Aircraft layer re-added after style change');
+          }
+          
+          // Force the animation loop to restart by triggering the useEffect
+          // We'll use a small delay to ensure everything is ready
+          setTimeout(() => {
+            const aircraftSource = map.current?.getSource('aircraft') as mapboxgl.GeoJSONSource;
+            const layer = map.current?.getLayer('aircraft-planes');
+            const hasIcon = map.current?.hasImage('plane-icon');
+            
+            if (aircraftSource && layer && hasIcon) {
+              console.log('[Map] Everything ready after style change, should see planes soon');
+              // The useEffect with aircraft dependency will restart the loop
+              // But we can manually trigger an update if needed
+            }
+          }, 100);
+          
+          // Re-add trails layer if it was removed during style change
+          if (!map.current.getLayer('trails')) {
+            map.current.addSource('aircraft-trails', {
+              type: 'geojson',
+              data: {
+                type: 'FeatureCollection',
+                features: [],
+              },
+            });
+            
+            map.current.addLayer({
+              id: 'trails',
+              type: 'line',
+              source: 'aircraft-trails',
+              paint: {
+                'line-color': theme === 'light' ? '#475569' : '#e2e8f0',
+                'line-width': 1,
+                'line-opacity': theme === 'light' ? 0.5 : 0.4,
+              },
+            });
+          } else {
+            // Update trails color when theme changes
+            map.current.setPaintProperty('trails', 'line-color', theme === 'light' ? '#475569' : '#e2e8f0');
+            map.current.setPaintProperty('trails', 'line-opacity', theme === 'light' ? 0.5 : 0.4);
+          }
+          
+          // Trigger an aircraft data update now that sources are ready
+          // The update loop will pick this up on the next frame
+          const aircraftSource = map.current.getSource('aircraft') as mapboxgl.GeoJSONSource;
+          if (aircraftSource) {
+            // Force a refresh by setting empty data then letting the update loop populate it
+            aircraftSource.setData({
+              type: 'FeatureCollection',
+              features: [],
+            });
+          }
+        }
+      });
+    });
+  }, [theme, mapLoaded]);
 
   return (
     <div className="absolute inset-0">
       <div ref={mapContainer} className="w-full h-full" />
 
       {!mapLoaded && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black">
+        <div className={`absolute inset-0 flex items-center justify-center ${
+          theme === 'light' ? 'bg-slate-50' : 'bg-black'
+        }`}>
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-slate-200 animate-pulse" />
-            <span className="text-xs uppercase tracking-widest text-slate-200 font-light">
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
+              theme === 'light' ? 'bg-slate-600' : 'bg-slate-200'
+            }`} />
+            <span className={`text-xs uppercase tracking-widest font-light ${
+              theme === 'light' ? 'text-slate-700' : 'text-slate-200'
+            }`}>
               Initializing Map
             </span>
           </div>

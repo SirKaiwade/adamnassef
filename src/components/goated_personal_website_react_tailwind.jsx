@@ -541,20 +541,23 @@ export default function GoatedPersonalSite() {
         </Section>
 
         <Section id="projects" title="Projects" icon={Rocket}>
-          <div className={`flex flex-col items-center justify-center py-16 text-center theme-transition ${theme === 'light' ? 'text-slate-600' : 'text-zinc-400'}`}>
-            <Rocket className="h-12 w-12 mb-4 opacity-50" />
-            <h3 className={`text-xl font-semibold mb-2 theme-transition ${theme === 'light' ? 'text-slate-900' : 'text-zinc-100'}`}>Coming Soon</h3>
-            <p className="text-sm">Projects will be added shortly!</p>
-          </div>
-          
-          {/* Hidden project cards for future use - uncomment when ready */}
-          {/* 
           <div className="grid gap-5 md:grid-cols-2">
+            <ProjectCard 
+              p={{
+                title: "SkyGrid",
+                subtitle: "Real-time Flight Tracking",
+                description: "Interactive flight tracking application with live aircraft data visualization.",
+                links: [{ href: "/skygrid", label: "View Project" }],
+                tags: ["React", "Mapbox", "TypeScript", "Real-time"]
+              }} 
+            />
+            {/* Hidden project cards for future use - uncomment when ready */}
+            {/* 
             {PROJECTS.map((p) => (
               <ProjectCard key={p.title} p={p} />)
             )}
+            */}
           </div>
-          */}
         </Section>
 
         <Section id="experience" title="Experience" icon={Notebook}>

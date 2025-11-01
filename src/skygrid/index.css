@@ -3,27 +3,32 @@
 @tailwind utilities;
 
 @layer base {
-  * {
+  .skygrid-app * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
 
-  body {
+  .skygrid-app {
     font-family: 'Inconsolata', monospace;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow: hidden;
     background: #000;
     color: #fff;
+    width: 100vw;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
   }
 
-  * {
+  .skygrid-app * {
     font-family: 'Inconsolata', monospace;
   }
 }
 
-input[type="range"]::-webkit-slider-thumb {
+.skygrid-app input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 16px;
@@ -34,7 +39,7 @@ input[type="range"]::-webkit-slider-thumb {
   border: 2px solid #0e1117;
 }
 
-input[type="range"]::-moz-range-thumb {
+.skygrid-app input[type="range"]::-moz-range-thumb {
   width: 16px;
   height: 16px;
   border-radius: 50%;
@@ -43,23 +48,23 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #0e1117;
 }
 
-.aircraft-marker {
+.skygrid-app .aircraft-marker {
   transition: transform 0.3s ease;
 }
 
-::-webkit-scrollbar {
+.skygrid-app ::-webkit-scrollbar {
   width: 6px;
 }
 
-::-webkit-scrollbar-track {
+.skygrid-app ::-webkit-scrollbar-track {
   background: #0a0a0a;
 }
 
-::-webkit-scrollbar-thumb {
+.skygrid-app ::-webkit-scrollbar-thumb {
   background: #1a1a1a;
   border-radius: 0;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.skygrid-app ::-webkit-scrollbar-thumb:hover {
   background: #2a2a2a;
 }

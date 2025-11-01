@@ -21,19 +21,16 @@ export default function SkyGridPage() {
     fontLink.rel = 'stylesheet';
     document.head.appendChild(fontLink);
 
-    // Set body styles for SkyGrid
-    document.body.style.overflow = 'hidden';
-    document.body.style.background = '#000';
-    document.body.style.color = '#fff';
-
     return () => {
-      // Cleanup: restore default body styles when leaving SkyGrid
-      document.body.style.overflow = '';
-      document.body.style.background = '';
-      document.body.style.color = '';
+      // Cleanup when leaving SkyGrid
+      // No need to restore body styles since they're scoped to .skygrid-app now
     };
   }, []);
 
-  return <SkyGridApp />;
+  return (
+    <div className="skygrid-app">
+      <SkyGridApp />
+    </div>
+  );
 }
 

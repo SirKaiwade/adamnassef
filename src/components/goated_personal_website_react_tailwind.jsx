@@ -243,7 +243,7 @@ const Hero = () => {
             <h1 className={`mt-4 text-4xl font-bold tracking-tight sm:text-6xl theme-transition ${
               theme === 'light' ? 'text-slate-900' : 'text-zinc-50'
             }`}>
-              Building <GradientText>useful things</GradientText> with calm focus
+              Shipping <GradientText>useful software</GradientText> with intent
             </h1>
             <p className={`mt-6 md:text-lg theme-transition ${theme === 'light' ? 'text-slate-600' : 'text-zinc-400'}`}>{PROFILE.blurb}</p>
             <div className="mt-8 flex flex-wrap items-center gap-3">

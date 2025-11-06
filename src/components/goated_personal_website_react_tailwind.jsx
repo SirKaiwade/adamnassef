@@ -444,6 +444,7 @@ const Footer = () => {
 const CommandPalette = ({ open, setOpen }) => {
   const [q, setQ] = useState("");
   const { theme } = useTheme();
+  const contentRef = useRef(null);
   const items = useMemo(
     () => [
       { label: "Go to About", href: "#about" },
@@ -465,14 +466,27 @@ const CommandPalette = ({ open, setOpen }) => {
     return () => window.removeEventListener("keydown", onDown);
   }, [setOpen]);
 
+  const handleBackdropClick = (e) => {
+    // Close if clicking on the backdrop (not the content)
+    if (contentRef.current && !contentRef.current.contains(e.target)) {
+      setOpen(false);
+    }
+  };
+
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[60] bg-black/50 p-4 backdrop-blur">
-      <div className={`mx-auto w-full max-w-xl rounded-2xl border shadow-2xl theme-transition ${
-        theme === 'light' 
-          ? 'border-slate-200 bg-white' 
-          : 'border-zinc-800 bg-zinc-950'
-      }`}>
+    <div 
+      className="fixed inset-0 z-[60] bg-black/50 p-4 backdrop-blur"
+      onClick={handleBackdropClick}
+    >
+      <div 
+        ref={contentRef}
+        className={`mx-auto w-full max-w-xl rounded-2xl border shadow-2xl theme-transition ${
+          theme === 'light' 
+            ? 'border-slate-200 bg-white' 
+            : 'border-zinc-800 bg-zinc-950'
+        }`}
+      >
         <div className={`flex items-center gap-2 border-b px-4 py-3 theme-transition ${
           theme === 'light' 
             ? 'border-slate-200' 
@@ -535,9 +549,21 @@ export default function GoatedPersonalSite() {
   useKeyboard({
     k: (e) => {
       if (e.ctrlKey || e.metaKey) return; // reserve for browsers
+      // Don't trigger if user is typing in an input or textarea
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      e.stopPropagation();
       setOpenCmd(true);
     },
-    "/": () => setOpenCmd(true),
+    "/": (e) => {
+      // Don't trigger if user is typing in an input or textarea
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+      e.preventDefault();
+      e.stopPropagation();
+      setOpenCmd(true);
+    },
     g: () => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" }),
   });
 

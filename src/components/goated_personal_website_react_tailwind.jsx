@@ -320,7 +320,18 @@ const ProjectCard = ({ p }) => {
           <Star className="h-3.5 w-3.5" />
           {p.subtitle}
         </div>
-        <h3 className={`mt-2 text-lg font-semibold theme-transition ${theme === 'light' ? 'text-slate-900' : 'text-zinc-100'}`}>{p.title}</h3>
+        <div className="mt-2 flex items-center gap-2">
+          <h3 className={`text-lg font-semibold theme-transition ${theme === 'light' ? 'text-slate-900' : 'text-zinc-100'}`}>{p.title}</h3>
+          {p.inProgress && (
+            <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium theme-transition ${
+              theme === 'light' 
+                ? 'text-amber-700 border-amber-300 bg-amber-50' 
+                : 'text-amber-400 border-amber-700/60 bg-amber-900/30'
+            }`}>
+              In Progress
+            </span>
+          )}
+        </div>
         <p className={`mt-2 text-sm theme-transition ${theme === 'light' ? 'text-slate-600' : 'text-zinc-400'}`}>{p.description}</p>
       </div>
       <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -595,9 +606,10 @@ export default function GoatedPersonalSite() {
               p={{
                 title: "Deutschly",
                 subtitle: "German Grammar Learning Platform",
-                description: "Interactive German grammar learning platform for mastering articles, cases, and grammar rules.",
+                description: "German grammar learning platform for mastering articles and cases.",
                 links: [{ href: "https://www.deutschly.com/", label: "Visit Site" }],
-                tags: ["Education", "German", "Grammar", "Language Learning"]
+                tags: ["Education", "German", "Grammar", "Language Learning"],
+                inProgress: true
               }} 
             />
             {/* Hidden project cards for future use - uncomment when ready */}

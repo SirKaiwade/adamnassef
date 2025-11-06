@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Github, Linkedin, Mail, ExternalLink, Download, Menu, X, Search, TerminalSquare, PlayCircle, Notebook, Rocket, Star, Sun, Moon } from "lucide-react";
+import { ArrowRight, Linkedin, Mail, ExternalLink, Download, Menu, X, Search, TerminalSquare, PlayCircle, Notebook, Rocket, Star, Sun, Moon } from "lucide-react";
 import { useTheme } from '../contexts/ThemeContext';
 
 // ======== CONFIG: edit these to personalize ========
@@ -270,7 +270,6 @@ const Hero = () => {
                 <Download className="h-4 w-4" /> Resume
               </a>
               <div className="ml-auto hidden items-center gap-3 md:flex">
-                <a href={PROFILE.github} aria-label="GitHub" className={`theme-transition ${theme === 'light' ? 'text-slate-500 hover:text-slate-900' : 'text-zinc-400 hover:text-white'}`}><Github /></a>
                 <a href={PROFILE.linkedin} aria-label="LinkedIn" className={`theme-transition ${theme === 'light' ? 'text-slate-500 hover:text-slate-900' : 'text-zinc-400 hover:text-white'}`}><Linkedin /></a>
                 <a href={PROFILE.instagram} aria-label="Instagram" className={`theme-transition ${theme === 'light' ? 'text-slate-500 hover:text-slate-900' : 'text-zinc-400 hover:text-white'}`}>
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -433,7 +432,6 @@ const Footer = () => {
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className={`text-sm theme-transition ${theme === 'light' ? 'text-slate-500' : 'text-zinc-500'}`}>© {new Date().getFullYear()} {PROFILE.name}. All rights reserved.</p>
           <div className={`flex items-center gap-4 theme-transition ${theme === 'light' ? 'text-slate-500' : 'text-zinc-400'}`}>
-            <a href={PROFILE.github} className={`theme-transition ${theme === 'light' ? 'hover:text-slate-900' : 'hover:text-white'}`}><Github className="h-5 w-5" /></a>
             <a href={PROFILE.linkedin} className={`theme-transition ${theme === 'light' ? 'hover:text-slate-900' : 'hover:text-white'}`}><Linkedin className="h-5 w-5" /></a>
             <a href={`mailto:${PROFILE.email}`} className={`theme-transition ${theme === 'light' ? 'hover:text-slate-900' : 'hover:text-white'}`}><Mail className="h-5 w-5" /></a>
           </div>

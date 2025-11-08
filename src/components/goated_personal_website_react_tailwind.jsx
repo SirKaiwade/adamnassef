@@ -636,6 +636,16 @@ export default function GoatedPersonalSite() {
                 inProgress: true
               }} 
             />
+            <ProjectCard 
+              p={{
+                title: "Giftendo",
+                subtitle: "Gift Registry Platform",
+                description: "Online platform for creating and sharing gift registries for weddings, events, and personal occasions.",
+                links: [{ href: "https://www.giftendo.com/", label: "Visit Site" }],
+                tags: ["Web Platform", "Gift Registry", "Events", "Weddings"],
+                inProgress: true
+              }} 
+            />
             {/* Hidden project cards for future use - uncomment when ready */}
             {/* 
             {PROJECTS.map((p) => (

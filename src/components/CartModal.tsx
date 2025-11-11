@@ -13,41 +13,12 @@ interface CartModalProps {
   onClose: () => void;
 }
 
-function CheckoutForm({ onSuccess, onError }: { onSuccess: () => void; onError: (error: string) => void }) {
+function CheckoutForm({ clientSecret, onSuccess, onError }: { clientSecret: string; onSuccess: () => void; onError: (error: string) => void }) {
   const stripe = useStripe();
   const elements = useElements();
   const { items, clearCart } = useCart();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { theme } = useTheme();
-
-  useEffect(() => {
-    // Create payment intent
-    const createPaymentIntent = async () => {
-      try {
-        const response = await fetch('/api/create-payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: items.map(item => ({ id: item.id, price: item.price })),
-          }),
-        });
-
-        const data = await response.json();
-        if (data.clientSecret) {
-          setClientSecret(data.clientSecret);
-        } else {
-          onError(data.error || 'Failed to initialize payment');
-        }
-      } catch (error: any) {
-        onError(error.message || 'Failed to create payment');
-      }
-    };
-
-    if (items.length > 0) {
-      createPaymentIntent();
-    }
-  }, [items, onError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,13 +48,6 @@ function CheckoutForm({ onSuccess, onError }: { onSuccess: () => void; onError: 
     }
   };
 
-  if (!clientSecret) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className={`w-8 h-8 animate-spin ${theme === 'light' ? 'text-slate-400' : 'text-zinc-600'}`} />
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -108,14 +72,48 @@ function CheckoutForm({ onSuccess, onError }: { onSuccess: () => void; onError: 
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
-  const { items, removeFromCart, total, clearCart } = useCart();
+  const { items, removeFromCart, total } = useCart();
   const { theme } = useTheme();
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
 
-  const handleCheckout = () => {
-    setShowCheckout(true);
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setShowCheckout(false);
+      setClientSecret(null);
+      setPaymentError(null);
+      setIsLoadingPayment(false);
+    }
+  }, [isOpen]);
+
+  const handleCheckout = async () => {
     setPaymentError(null);
+    setIsLoadingPayment(true);
+    
+    try {
+      const response = await fetch('/api/create-payment-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(item => ({ id: item.id, price: item.price })),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.clientSecret) {
+        setClientSecret(data.clientSecret);
+        setShowCheckout(true);
+      } else {
+        setPaymentError(data.error || 'Failed to initialize payment');
+      }
+    } catch (error: any) {
+      setPaymentError(error.message || 'Failed to create payment');
+    } finally {
+      setIsLoadingPayment(false);
+    }
   };
 
   const handlePaymentSuccess = () => {
@@ -178,7 +176,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   Your cart is empty
                 </p>
               </div>
-            ) : showCheckout ? (
+            ) : showCheckout && clientSecret ? (
               <div>
                 {paymentError && (
                   <div className={`mb-4 p-4 rounded-lg ${
@@ -190,6 +188,7 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                 <Elements
                   stripe={stripePromise}
                   options={{
+                    clientSecret,
                     appearance: {
                       theme: theme === 'dark' ? 'night' : 'stripe',
                       variables: {
@@ -203,8 +202,12 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                     },
                   }}
                 >
-                  <CheckoutForm onSuccess={handlePaymentSuccess} onError={setPaymentError} />
+                  <CheckoutForm clientSecret={clientSecret} onSuccess={handlePaymentSuccess} onError={setPaymentError} />
                 </Elements>
+              </div>
+            ) : isLoadingPayment ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className={`w-8 h-8 animate-spin ${theme === 'light' ? 'text-slate-400' : 'text-zinc-600'}`} />
               </div>
             ) : (
               <div className="space-y-4">
@@ -261,13 +264,14 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
               </div>
               <button
                 onClick={handleCheckout}
+                disabled={isLoadingPayment}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
                   theme === 'light'
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-white text-zinc-900 hover:bg-zinc-100'
+                    ? 'bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-400'
+                    : 'bg-white text-zinc-900 hover:bg-zinc-100 disabled:bg-zinc-600'
                 }`}
               >
-                Proceed to Checkout
+                {isLoadingPayment ? 'Loading...' : 'Proceed to Checkout'}
               </button>
             </div>
           )}

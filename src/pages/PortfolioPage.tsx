@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Download, ExternalLink, Sparkles } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, ExternalLink, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCart } from '../contexts/CartContext';
+import CartModal from '../components/CartModal';
 
 // Template type definition
 interface Template {
@@ -49,8 +51,10 @@ const TEMPLATES: Template[] = [
 
 export default function PortfolioPage() {
   const { theme } = useTheme();
+  const { addToCart, itemCount } = useCart();
   const [isExiting, setIsExiting] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,42 +74,15 @@ export default function PortfolioPage() {
     }, 300);
   };
 
-  const handlePurchase = async (template: Template) => {
-    try {
-      // Show loading state (you could add a loading spinner here)
-      const baseUrl = window.location.origin;
-      const successUrl = `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/checkout/cancel`;
-
-      // Call API to create Stripe checkout session
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          templateId: template.id,
-          successUrl,
-          cancelUrl,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
-
-      // Redirect to Stripe Checkout
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL received');
-      }
-    } catch (error: any) {
-      console.error('Error initiating purchase:', error);
-      alert(`Error: ${error.message || 'Failed to start checkout. Please try again.'}`);
-    }
+  const handleAddToCart = (template: Template) => {
+    addToCart({
+      id: template.id,
+      title: template.title,
+      price: template.price,
+      description: template.description,
+    });
+    // Open cart with smooth animation
+    setIsCartOpen(true);
   };
 
   const handlePreview = (template: Template) => {
@@ -148,17 +125,41 @@ export default function PortfolioPage() {
                   Adam Nassef
                 </span>
               </Link>
-              <button
-                onClick={handleBackClick}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border transition-all font-medium text-sm ${
-                  theme === 'light'
-                    ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
-                    : 'border-zinc-800 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-900'
-                }`}
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Site</span>
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  className={`relative inline-flex items-center gap-2 px-4 py-2 rounded-lg border transition-all font-medium text-sm ${
+                    theme === 'light'
+                      ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'border-zinc-800 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-900'
+                  }`}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  <span>Cart</span>
+                  {itemCount > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className={`absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                        theme === 'light' ? 'bg-slate-900 text-white' : 'bg-white text-zinc-900'
+                      }`}
+                    >
+                      {itemCount}
+                    </motion.span>
+                  )}
+                </button>
+                <button
+                  onClick={handleBackClick}
+                  className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border transition-all font-medium text-sm ${
+                    theme === 'light'
+                      ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      : 'border-zinc-800 bg-zinc-900/40 text-zinc-300 hover:bg-zinc-900'
+                  }`}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back to Site</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -300,8 +301,10 @@ export default function PortfolioPage() {
                           Preview
                         </button>
                       )}
-                      <button
-                        onClick={() => handlePurchase(template)}
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handleAddToCart(template)}
                         className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg font-medium text-sm transition-colors ${
                           theme === 'light'
                             ? 'bg-slate-900 text-white hover:bg-slate-800'
@@ -309,8 +312,8 @@ export default function PortfolioPage() {
                         }`}
                       >
                         <ShoppingCart className="w-4 h-4" />
-                        Buy
-                      </button>
+                        Add to Cart
+                      </motion.button>
                     </div>
                   </div>
                 </div>
@@ -350,6 +353,8 @@ export default function PortfolioPage() {
           </div>
         </footer>
       </div>
+
+      <CartModal isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );
 }

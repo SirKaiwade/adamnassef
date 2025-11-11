@@ -28,6 +28,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // Check if Stripe key is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      console.error('STRIPE_SECRET_KEY is not set');
+      return res.status(500).json({ error: 'Stripe configuration error: Secret key not found' });
+    }
+
     const { templateId, successUrl, cancelUrl } = req.body;
 
     if (!templateId) {
@@ -37,6 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const templateConfig = TEMPLATE_CONFIG[templateId];
     if (!templateConfig) {
       return res.status(404).json({ error: 'Template not found' });
+    }
+
+    // Check if price ID is configured
+    if (!templateConfig.priceId || templateConfig.priceId === 'price_xxxxx') {
+      console.error(`Price ID not configured for template ${templateId}`);
+      return res.status(500).json({ error: 'Template price not configured. Please set STRIPE_PRICE_ID_TEMPLATE_1 in environment variables.' });
     }
 
     // Create Stripe Checkout Session

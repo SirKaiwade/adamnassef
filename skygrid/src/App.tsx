@@ -359,39 +359,19 @@ function App() {
           
           {pingMs > 0 && (() => {
             // Determine color based on ping quality
-            let iconColor = 'green';
             let textColor = 'text-green-400';
             
             if (pingMs > 500) {
-              iconColor = 'red';
               textColor = 'text-red-400';
             } else if (pingMs > 200) {
-              iconColor = 'yellow';
               textColor = 'text-yellow-400';
             }
-            
-            // CSS filter to convert white icon to the appropriate color
-            const iconFilters: Record<string, string> = {
-              green: 'brightness(0) saturate(100%) invert(69%) sepia(95%) saturate(352%) hue-rotate(85deg) brightness(95%) contrast(95%)',
-              yellow: 'brightness(0) saturate(100%) invert(85%) sepia(90%) saturate(7500%) hue-rotate(5deg) brightness(105%) contrast(105%)',
-              red: 'brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(4214%) hue-rotate(342deg) brightness(99%) contrast(96%)',
-            };
             
             return (
               <>
                 <div className="w-px h-5 bg-[#1a1a1a]" />
                 <div className={`flex items-center gap-2 px-3 py-1.5 border border-[#1a1a1a] rounded ${textColor}`}>
-                  <img 
-                    src="/1520228-200.png" 
-                    alt="live" 
-                    width="20" 
-                    height="20" 
-                    style={{ 
-                      filter: iconFilters[iconColor],
-                      imageRendering: 'crisp-edges'
-                    }} 
-                    className="flex-shrink-0"
-                  />
+                  <span className="flex-shrink-0 text-lg">🎓</span>
                   <span className={`font-mono text-xs ${textColor}`}>~{pingMs} MS</span>
                 </div>
               </>

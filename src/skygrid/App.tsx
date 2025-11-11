@@ -434,28 +434,13 @@ function App() {
             
             {pingMs > 0 && (() => {
             // Determine color based on ping quality
-            let iconColor = 'green';
             let textColor = theme === 'light' ? 'text-[#35C46A]' : 'text-green-400';
             
             if (pingMs > 500) {
-              iconColor = 'red';
               textColor = 'text-red-400';
             } else if (pingMs > 200) {
-              iconColor = 'yellow';
               textColor = 'text-yellow-400';
             }
-            
-            // CSS filter to convert white icon to the appropriate color
-            // Use darker filters for light mode, lighter for dark mode
-            const iconFilters: Record<string, string> = theme === 'light' ? {
-              green: 'brightness(0) saturate(100%) invert(42%) sepia(96%) saturate(1352%) hue-rotate(90deg) brightness(92%) contrast(85%)', // Darker green for light mode (#35C46A)
-              yellow: 'brightness(0) saturate(100%) invert(75%) sepia(90%) saturate(7500%) hue-rotate(5deg) brightness(95%) contrast(105%)',
-              red: 'brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(4214%) hue-rotate(342deg) brightness(99%) contrast(96%)',
-            } : {
-              green: 'brightness(0) saturate(100%) invert(69%) sepia(95%) saturate(352%) hue-rotate(85deg) brightness(95%) contrast(95%)',
-              yellow: 'brightness(0) saturate(100%) invert(85%) sepia(90%) saturate(7500%) hue-rotate(5deg) brightness(105%) contrast(105%)',
-              red: 'brightness(0) saturate(100%) invert(41%) sepia(97%) saturate(4214%) hue-rotate(342deg) brightness(99%) contrast(96%)',
-            };
             
             return (
               <>
@@ -467,17 +452,7 @@ function App() {
                     ? 'border border-slate-200 bg-slate-50' 
                     : 'border border-[#1a1a1a]'
                 }`}>
-                  <img 
-                    src="/1520228-200.png" 
-                    alt="live" 
-                    width="20" 
-                    height="20" 
-                    style={{ 
-                      filter: iconFilters[iconColor],
-                      imageRendering: 'crisp-edges'
-                    }} 
-                    className="flex-shrink-0"
-                  />
+                  <span className="flex-shrink-0 text-lg">🎓</span>
                   <span className={`font-mono text-xs ${textColor}`}>~{pingMs} MS</span>
                 </div>
               </>

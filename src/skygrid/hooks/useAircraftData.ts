@@ -17,6 +17,7 @@ export function useAircraftData({ viewMode, selectedCity, radiusKm, refreshInter
   const actualRefreshInterval = refreshInterval || defaultInterval;
   const [aircraft, setAircraft] = useState<Aircraft[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pingMs, setPingMs] = useState<number>(0);
   const previousDataRef = useRef<Map<string, Aircraft>>(new Map());
   const interpolationIntervalRef = useRef<number | null>(null);
 
@@ -61,6 +62,7 @@ export function useAircraftData({ viewMode, selectedCity, radiusKm, refreshInter
   };
 
   const fetchAircraft = async () => {
+    const startTime = performance.now();
     try {
       const bounds = calculateBounds();
       if (bounds) {
@@ -69,7 +71,10 @@ export function useAircraftData({ viewMode, selectedCity, radiusKm, refreshInter
         console.log(`[Data Hook] Fetching aircraft - viewMode: ${viewMode}, bounds: global`);
       }
       const states = await openskyAPI.fetchAircraft(bounds);
-      console.log(`[Data Hook] Received ${states.length} aircraft`);
+      const endTime = performance.now();
+      const ping = Math.round(endTime - startTime);
+      setPingMs(ping);
+      console.log(`[Data Hook] Received ${states.length} aircraft (ping: ${ping}ms)`);
 
       const converted = states
         .map(convertToAircraft)
@@ -101,5 +106,5 @@ export function useAircraftData({ viewMode, selectedCity, radiusKm, refreshInter
     };
   }, [viewMode, selectedCity, radiusKm, actualRefreshInterval]);
 
-  return { aircraft, isLoading };
+  return { aircraft, isLoading, pingMs };
 }

@@ -28,7 +28,7 @@ function App() {
     weather: false,
   });
 
-  const { aircraft, isLoading } = useAircraftData({
+  const { aircraft, isLoading, pingMs: hookPingMs } = useAircraftData({
     viewMode,
     selectedCity,
     radiusKm,
@@ -297,14 +297,12 @@ function App() {
     fetchIpAddress();
   }, []);
 
-  // Track ping based on aircraft data fetch timing (no separate ping needed)
-  // Ping will be updated when aircraft data is successfully fetched
+  // Update ping from hook
   useEffect(() => {
-    // Set initial ping to a reasonable default
-    if (pingMs === 0) {
-      setPingMs(100);
+    if (hookPingMs > 0) {
+      setPingMs(hookPingMs);
     }
-  }, []);
+  }, [hookPingMs]);
 
   // Track aircraft passing overhead when location is selected
   useEffect(() => {
@@ -452,7 +450,6 @@ function App() {
                     ? 'border border-slate-200 bg-slate-50' 
                     : 'border border-[#1a1a1a]'
                 }`}>
-                  <span className="flex-shrink-0 text-lg">🎓</span>
                   <span className={`font-mono text-xs ${textColor}`}>~{pingMs} MS</span>
                 </div>
               </>

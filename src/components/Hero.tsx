@@ -99,7 +99,7 @@ export default function Hero() {
               <a href="mailto:adam@example.com" className="text-zinc-400 hover:text-white transition-colors">
                 <Mail size={24} />
               </a>
-              <a href="/resume.pdf" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+              <a href="/Nassef_Adam_Resume_2025.pdf" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
                 <FileText size={24} />
               </a>
             </motion.div>

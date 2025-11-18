@@ -11,7 +11,7 @@ const PROFILE = {
   blurb:
     "Interned on optimization & simulation at Amazon. Built a blockchain marketing studio to $1.3M+ revenue. I like hard problems, simple UX, and fast feedback loops.",
   headshot: "https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1764201600&v=beta&t=aV4iFVnuAIrLdvSamAYXJORzN0YgXTAihx4Vmilfmq0",
-  resumeUrl: "/Adam_Nassef_Resume_2025.pdf", // PDF file in public directory
+  resumeUrl: "/Nassef_Adam_Resume_2025.pdf", // PDF file in public directory
   email: "ayhnassef@gmail.com",
   github: "https://github.com/",
   linkedin: "https://linkedin.com/in/adamnassef",
@@ -266,7 +266,7 @@ const Hero = () => {
               </a>
               <a
                 href={PROFILE.resumeUrl}
-                download="Adam_Nassef_Resume_2025.pdf"
+                download="Nassef_Adam_Resume_2025.pdf"
                 className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm theme-transition ${
                   theme === 'light' 
                     ? 'border-slate-300 text-slate-700 hover:bg-slate-50' 

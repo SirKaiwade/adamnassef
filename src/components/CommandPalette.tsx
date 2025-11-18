@@ -8,7 +8,7 @@ const commands = [
   { name: 'Experience', section: 'experience', icon: Search, type: 'navigate' },
   { name: 'Writing', section: 'writing', icon: Search, type: 'navigate' },
   { name: 'Contact', section: 'contact', icon: Search, type: 'navigate' },
-  { name: 'Resume', href: '/resume.pdf', icon: FileText, type: 'link' },
+  { name: 'Resume', href: '/Nassef_Adam_Resume_2025.pdf', icon: FileText, type: 'link' },
   { name: 'Email', href: 'mailto:adam@example.com', icon: Mail, type: 'link' },
   { name: 'GitHub', href: 'https://github.com', icon: Github, type: 'link' },
   { name: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin, type: 'link' },

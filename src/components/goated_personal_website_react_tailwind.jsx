@@ -127,9 +127,9 @@ const Nav = ({ onOpenCmd }) => {
               {label}
             </a>
           ))}
-          <Link to="/portfolio" className={`text-lg font-semibold transition-colors ${theme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-300 hover:text-white'}`}>
+          {/* <Link to="/portfolio" className={`text-lg font-semibold transition-colors ${theme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-300 hover:text-white'}`}>
             Portfolio
-          </Link>
+          </Link> */}
           <button
             onClick={toggleTheme}
             className={`inline-flex items-center justify-center w-10 h-10 rounded-lg border transition-all duration-300 ${
@@ -184,9 +184,9 @@ const Nav = ({ onOpenCmd }) => {
               {label}
             </a>
           ))}
-          <Link to="/portfolio" className={`block py-2 transition-colors ${theme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-300'}`}>
+          {/* <Link to="/portfolio" className={`block py-2 transition-colors ${theme === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-zinc-300'}`}>
             Portfolio
-          </Link>
+          </Link> */}
           <div className="mt-2 flex gap-2">
             <button
               onClick={toggleTheme}
@@ -457,7 +457,7 @@ const CommandPalette = ({ open, setOpen }) => {
       { label: "Go to Projects", href: "#projects" },
       { label: "Go to Experience", href: "#experience" },
       { label: "Contact", href: "#contact" },
-      { label: "Portfolio", href: "/portfolio", isRoute: true },
+      // { label: "Portfolio", href: "/portfolio", isRoute: true },
       { label: "Open Resume", href: PROFILE.resumeUrl },
       { label: "Email Adam", href: `mailto:${PROFILE.email}` },
     ],

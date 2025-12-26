@@ -10,7 +10,7 @@ const PROFILE = {
   tagline: "Cognitive Science @ U of T · Builder · PM Intern",
   blurb:
     "Interned on optimization & simulation at Amazon. Built a blockchain marketing studio to $1.3M+ revenue. I like hard problems, simple UX, and fast feedback loops.",
-  headshot: "https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1764201600&v=beta&t=aV4iFVnuAIrLdvSamAYXJORzN0YgXTAihx4Vmilfmq0",
+  headshot: "https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1768435200&v=beta&t=81ur7dUMnOp5Pf-Cfi46tENsznAZj29bxUHNWN8z4lk",
   resumeUrl: "/Nassef_Adam_Resume_2025.pdf", // PDF file in public directory
   email: "ayhnassef@gmail.com",
   github: "https://github.com/",

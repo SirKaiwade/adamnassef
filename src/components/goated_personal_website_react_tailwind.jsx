@@ -663,6 +663,15 @@ export default function GoatedPersonalSite() {
                 inProgress: true
               }} 
             />
+            <ProjectCard 
+              p={{
+                title: "Dialed",
+                subtitle: "iOS App",
+                description: "See your day at a glance. Schedule with precision. The most beautiful way to see and manage your your day on a stunning radial dial.",
+                links: [{ href: "https://dialed.dev/", label: "Visit Site" }],
+                tags: ["iOS", "Productivity", "Day Planner", "Radial Design"]
+              }} 
+            />
             {/* Hidden project cards for future use - uncomment when ready */}
             {/* 
             {PROJECTS.map((p) => (

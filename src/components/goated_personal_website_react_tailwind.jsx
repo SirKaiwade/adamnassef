@@ -10,8 +10,8 @@ const PROFILE = {
   tagline: "Cognitive Science @ U of T · Builder · PM Intern",
   blurb:
     "Interned on optimization & simulation at Amazon. Built a blockchain marketing studio to $1.3M+ revenue. I like hard problems, simple UX, and fast feedback loops.",
-  headshot: "https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1768435200&v=beta&t=81ur7dUMnOp5Pf-Cfi46tENsznAZj29bxUHNWN8z4lk",
-  resumeUrl: "/Nassef_Adam_Resume_2025.pdf", // PDF file in public directory
+  headshot: "/headshot.jpg",
+  resumeUrl: "/Nassef_Adam_Resume_April_2026.pdf", // PDF file in public directory
   email: "ayhnassef@gmail.com",
   github: "https://github.com/",
   linkedin: "https://linkedin.com/in/adamnassef",
@@ -266,7 +266,7 @@ const Hero = () => {
               </a>
               <a
                 href={PROFILE.resumeUrl}
-                download="Nassef_Adam_Resume_2025.pdf"
+                download="Nassef_Adam_Resume_April_2026.pdf"
                 className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm theme-transition ${
                   theme === 'light' 
                     ? 'border-slate-300 text-slate-700 hover:bg-slate-50' 
@@ -650,16 +650,6 @@ export default function GoatedPersonalSite() {
                 description: "German grammar learning platform for mastering articles and cases.",
                 links: [{ href: "https://www.deutschly.com/", label: "Visit Site" }],
                 tags: ["Education", "German", "Grammar", "Language Learning"],
-                inProgress: true
-              }} 
-            />
-            <ProjectCard 
-              p={{
-                title: "Giftendo",
-                subtitle: "Gift Registry Platform",
-                description: "Online platform for creating and sharing gift registries for weddings, events, and personal occasions.",
-                links: [{ href: "https://www.giftendo.com/", label: "Visit Site" }],
-                tags: ["Web Platform", "Gift Registry", "Events", "Weddings"],
                 inProgress: true
               }} 
             />

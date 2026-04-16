@@ -99,7 +99,7 @@ export default function Hero() {
               <a href="mailto:adam@example.com" className="text-zinc-400 hover:text-white transition-colors">
                 <Mail size={24} />
               </a>
-              <a href="/Nassef_Adam_Resume_2025.pdf" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
+              <a href="/Nassef_Adam_Resume_April_2026.pdf" target="_blank" rel="noopener noreferrer" className="text-zinc-400 hover:text-white transition-colors">
                 <FileText size={24} />
               </a>
             </motion.div>
@@ -114,7 +114,7 @@ export default function Hero() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-sky-400 via-violet-400 to-fuchsia-400 rounded-full blur-2xl opacity-30" />
               <img
-                src="https://media.licdn.com/dms/image/v2/D4D03AQFakq3HVOpZ-w/profile-displayphoto-shrink_800_800/B4DZdyp9m4GUAc-/0/1749975292738?e=1762387200&v=beta&t=Q5OBKvs_eOiySU4EUYuaNYCC5ai8lfOdEF2RCMy56Is"
+                src="/headshot.jpg"
                 alt="Adam Nassef"
                 className="relative w-64 h-64 md:w-80 md:h-80 rounded-full object-cover border-4 border-zinc-800"
               />

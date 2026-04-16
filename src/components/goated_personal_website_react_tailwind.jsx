@@ -687,7 +687,7 @@ export default function GoatedPersonalSite() {
                 ]}
               />
               <TimelineItem
-                role="Product Development Intern"
+                role="Product Management Intern"
                 org="Lufthansa Technik"
                 time="May 2024 – Sep 2024 · Hamburg, Germany"
                 points={[
